@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delay Calculator</title>
+    <style>
+        :root {
+            --bg-color: #C0C0C0;
+            --text-color: #000000;
+            --highlight: #FFFFFF;
+            --shadow: #808080;
+            --deep-shadow: #404040;
+            --selection-bg: #000080;
+            --selection-text: #FFFFFF;
+            --font-family: 'MS Sans Serif', 'Tahoma', sans-serif;
+            --font-size: 11px; /* approx 8pt */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            position: relative;
+            -webkit-app-region: drag; /* Enable dragging for the whole window */
+            -webkit-font-smoothing: none;
+        }
+
+        /* --- Interactive Elements (Non-Draggable) --- */
+        button, input, select, .win-btn, .retro-label, .delays-container, .delay-readout, .menu-item, .dropdown-menu {
+            -webkit-app-region: no-drag;
+        }
+
+        /* --- Title Bar (Blue Gradient) --- */
+        .title-bar {
+            height: 18px;
+            background: #000080;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px;
+            -webkit-app-region: drag; /* Drag handle */
+            font-weight: bold;
+        }
+
+        .title-bar.reverb-mode {
+            background: #008080 !important; /* Teal/Sea Green for Reverb Mode */
+        }
+
+        .title-text {
+            margin-left: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .title-controls {
+            display: flex;
+            gap: 2px;
+            -webkit-app-region: no-drag;
+        }
+
+        .title-btn {
+            width: 16px;
+            height: 14px;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--highlight);
+            border-left: 1px solid var(--highlight);
+            border-right: 1px solid var(--deep-shadow);
+            border-bottom: 1px solid var(--deep-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: black;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .title-btn:active {
+            border-top: 1px solid var(--deep-shadow);
+            border-left: 1px solid var(--deep-shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            box-shadow: none;
+            padding-top: 1px;
+            padding-left: 1px;
+        }
+
+        /* Menu Bar - No Drag (Title bar handles it) */
+        .menu-bar {
+             -webkit-app-region: no-drag;
+        }
+
+        /* --- Utility Classes for Win98 Look --- */
+        .win-bevel-raised {
+            border-top: 1px solid var(--highlight);
+            border-left: 1px solid var(--highlight);
+            border-right: 1px solid var(--deep-shadow);
+            border-bottom: 1px solid var(--deep-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow), inset 1px 1px 0 0 var(--bg-color); 
+        }
+        
+        .win-bevel-sunken {
+            border-top: 1px solid var(--shadow);
+            border-left: 1px solid var(--shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            box-shadow: inset 1px 1px 0 0 var(--deep-shadow);
+            background-color: #FFFFFF;
+        }
+
+        .win-btn {
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--highlight);
+            border-left: 1px solid var(--highlight);
+            border-right: 1px solid var(--deep-shadow);
+            border-bottom: 1px solid var(--deep-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow);
+            padding: 3px 6px;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            cursor: pointer;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .win-btn:active, .win-btn.active {
+            border-top: 1px solid var(--deep-shadow);
+            border-left: 1px solid var(--deep-shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            box-shadow: none;
+            transform: translate(1px, 1px);
+        }
+
+        .win-btn:focus {
+            outline: 1px dotted #000;
+            outline-offset: -4px;
+        }
+        
+        .win-btn-small {
+            min-width: 20px;
+            padding: 2px;
+            font-weight: bold;
+        }
+
+        /* --- Menu Bar --- */
+        .menu-bar {
+            display: flex;
+            background-color: var(--bg-color);
+            padding: 1px 0 2px 0;
+            margin-bottom: 2px;
+            border-bottom: 1px solid var(--highlight); /* optional visual separator */
+        }
+
+        .menu-item {
+            padding: 2px 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            background-color: var(--selection-bg);
+            color: var(--selection-text);
+        }
+        
+        .menu-item.active {
+            background-color: var(--selection-bg);
+            color: var(--selection-text);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--highlight);
+            border-left: 1px solid var(--highlight);
+            border-right: 1px solid var(--deep-shadow);
+            border-bottom: 1px solid var(--deep-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow);
+            display: none;
+            flex-direction: column;
+            min-width: 120px;
+            z-index: 1000;
+            padding: 2px;
+        }
+
+        .dropdown-item {
+            padding: 4px 16px 4px 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--selection-bg);
+            color: var(--selection-text);
+        }
+
+        .dropdown-separator {
+            height: 1px;
+            background-color: var(--shadow);
+            border-bottom: 1px solid var(--highlight);
+            margin: 2px 0;
+        }
+
+        /* --- Layout --- */
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 0;
+            position: relative;
+        }
+        
+        .view-stack {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        /* --- GroupBox --- */
+        .groupbox {
+            position: relative;
+            border: 1px solid var(--shadow); 
+            border-right-color: var(--highlight);
+            border-bottom-color: var(--highlight);
+            margin-top: 8px;
+            padding: 12px 8px 8px 8px;
+            flex-shrink: 0;
+        }
+        
+        .groupbox::before { 
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 1px solid var(--deep-shadow); 
+            border-right-color: var(--shadow);
+            border-bottom-color: var(--shadow);
+            pointer-events: none;
+        }
+        
+        .groupbox-title {
+            position: absolute;
+            top: -7px;
+            left: 8px;
+            background-color: var(--bg-color);
+            padding: 0 4px;
+            font-weight: normal;
+            z-index: 1;
+        }
+
+        /* --- Tempo Section --- */
+        .tempo-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .bpm-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .bpm-label {
+            margin-right: 6px;
+        }
+
+        .bpm-input {
+            width: 60px;
+            height: 21px;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 2px 4px;
+            border: none;
+            outline: none;
+            text-align: right;
+        }
+
+        .spin-container {
+            display: flex;
+            flex-direction: column;
+            height: 21px;
+        }
+
+        .spin-btn {
+            width: 16px;
+            height: 11px;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--highlight);
+            border-left: 1px solid var(--highlight);
+            border-right: 1px solid var(--deep-shadow);
+            border-bottom: 1px solid var(--deep-shadow);
+            box-shadow: inset -1px -1px 0 var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+        }
+        .spin-btn:active {
+            border-top: 1px solid var(--deep-shadow);
+            border-left: 1px solid var(--deep-shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            box-shadow: none;
+            padding-top: 1px;
+            padding-left: 1px;
+        }
+
+        .help-hint {
+            margin-top: 4px;
+            color: #666;
+            font-size: 10px;
+            margin-left: 36px;
+        }
+
+        /* --- Delays List (New Property Sheet Style) --- */
+        .table-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding-bottom: 8px; /* Extra padding at bottom */
+        }
+
+        .delays-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .delay-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .delay-row {
+            display: flex;
+            align-items: center;
+            height: 20px;
+        }
+
+        .delay-label {
+            width: 30px;
+            white-space: nowrap;
+            overflow: hidden;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .delay-readout {
+            /* flex: 1; Removed flex: 1 to use fixed width */
+            width: 70px; /* Fixed width for values */
+            height: 100%;
+            background-color: #fff;
+            text-align: right;
+            font-family: inherit; /* Use global pixel font */
+            font-size: 11px;
+            cursor: pointer;
+            padding: 2px 2px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            
+            /* Sunken border */
+            border-top: 1px solid var(--shadow);
+            border-left: 1px solid var(--shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            box-shadow: inset 1px 1px 0 var(--deep-shadow);
+        }
+
+        .delay-readout:active {
+            background-color: var(--selection-bg);
+            color: var(--selection-text);
+        }
+        
+        .delay-unit {
+            padding-left: 4px;
+            width: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 16px; background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--bg-color);
+            border: 1px solid var(--highlight);
+            border-right-color: var(--deep-shadow);
+            border-bottom-color: var(--deep-shadow);
+            box-shadow: inset 1px 1px 0 var(--highlight), inset -1px -1px 0 var(--shadow);
+        }
+        ::-webkit-scrollbar-button {
+            background-color: var(--bg-color);
+            height: 16px; width: 16px;
+            border: 1px solid var(--highlight);
+            border-right-color: var(--deep-shadow);
+            border-bottom-color: var(--deep-shadow);
+            box-shadow: inset 1px 1px 0 var(--highlight), inset -1px -1px 0 var(--shadow);
+            display: block;
+        }
+
+        /* --- Status Bar --- */
+        .status-bar {
+            margin-top: 6px;
+            height: 22px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .status-panel {
+            border-top: 1px solid var(--shadow);
+            border-left: 1px solid var(--shadow);
+            border-right: 1px solid var(--highlight);
+            border-bottom: 1px solid var(--highlight);
+            padding: 2px 4px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .status-main { flex: 1; }
+        .status-right { width: 100px; justify-content: flex-end;}
+
+        /* --- RETRO CHECKBOX (Late 70s/Early 80s Style) --- */
+        .retro-label {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Spec: small gap */
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .retro-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px; /* Spec: 12-14px */
+            background-color: #FFFFFF;
+            border: 2px solid #000000; /* Spec: thicker and darker border */
+            border-radius: 0; /* Spec: perfectly square */
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            outline: none; /* We handle focus via label text */
+        }
+
+        /* The X mark - visible only when checked */
+        .retro-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            /* Draw a thick X using gradients */
+            background: 
+                linear-gradient(45deg, transparent 40%, #000 40%, #000 60%, transparent 60%),
+                linear-gradient(-45deg, transparent 40%, #000 40%, #000 60%, transparent 60%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Focus state: dotted rectangle around the label text */
+        .retro-checkbox:focus + .retro-text {
+            outline: 1px dotted #000000;
+            outline-offset: 2px;
+        }
+        
+        /* Disabled state */
+        .retro-checkbox:disabled {
+            border-color: var(--shadow);
+            background-color: #f0f0f0;
+            cursor: default;
+        }
+        
+        .retro-checkbox:disabled + .retro-text {
+            color: var(--shadow);
+            cursor: default;
+        }
+
+        .retro-checkbox:disabled:checked::after {
+            background: 
+                linear-gradient(45deg, transparent 40%, var(--shadow) 40%, var(--shadow) 60%, transparent 60%),
+                linear-gradient(-45deg, transparent 40%, var(--shadow) 40%, var(--shadow) 60%, transparent 60%);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        
+        <!-- === TITLE BAR === -->
+        <div class="title-bar">
+            <div class="title-text" id="app-title-container">
+                <!-- Optional Icon: <img src="icon.ico" width="16" height="16"> -->
+                Delay Calculator
+            </div>
+            <div class="title-controls">
+                <button class="title-btn" id="btn-minimize" aria-label="Minimize">_</button>
+                <button class="title-btn" id="btn-close" aria-label="Close">X</button>
+            </div>
+        </div>
+
+        <!-- === MENU BAR === -->
+        <div class="menu-bar">
+            <div class="menu-item" id="menu-file">
+                File
+                <div class="dropdown-menu" id="dropdown-file">
+                    <div class="dropdown-item" id="menu-export-text">Export as Text...</div>
+                    <div class="dropdown-separator"></div>
+                    <div class="dropdown-item" id="menu-exit">Exit</div>
+                </div>
+            </div>
+            <div class="menu-item" id="menu-options">
+                Options
+                <div class="dropdown-menu" id="dropdown-options">
+                    <div class="dropdown-item" id="menu-settings">Settings...</div>
+                </div>
+            </div>
+            <div class="menu-item" id="menu-help">
+                Help
+                <div class="dropdown-menu" id="dropdown-help">
+                    <div class="dropdown-item" id="menu-what-is">What is this?</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === MAIN VIEW === -->
+        <div id="view-main" class="view-stack">
+            <!-- TEMPO GROUP -->
+            <div class="groupbox" id="tempo-group">
+                <div class="groupbox-title">Tempo</div>
+                
+                <div class="tempo-controls">
+                    <div class="bpm-input-group">
+                        <span class="bpm-label">BPM:</span>
+                        <div class="win-bevel-sunken" style="display: flex;">
+                            <input type="text" id="bpm-input" class="bpm-input" value="120.0">
+                        </div>
+                        <div class="spin-container">
+                            <button class="spin-btn" id="btn-up">▲</button>
+                            <button class="spin-btn" id="btn-down">▼</button>
+                        </div>
+                    </div>
+
+                    <button class="win-btn" id="btn-tap" style="width: 50px;">Tap</button>
+                    <button class="win-btn" id="btn-reset" style="width: 50px;">Reset</button>
+                </div>
+                
+                <div class="help-hint">
+                    ↑↓ = ±1 &nbsp;&nbsp; ←→ = ±0.1 &nbsp;&nbsp; Space = Tap
+                </div>
+            </div>
+
+            <!-- DELAYS LIST GROUP -->
+            <div class="groupbox table-group">
+                <div class="groupbox-title" id="delays-title">Delays (ms)</div>
+                
+                <div id="delays-container" class="delays-container">
+                    <!-- JS fills this with rows -->
+                </div>
+            </div>
+        </div>
+
+        <!-- === SETTINGS VIEW (Hidden by default) === -->
+        <div id="view-settings" class="view-stack" style="display: none;">
+            <div class="groupbox" id="settings-group" style="flex: 1;">
+                <div class="groupbox-title">Settings</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Sample Rate:</span>
+                        <select id="sample-rate-select" style="font-size: 11px;">
+                            <option value="44100">44.1 kHz</option>
+                            <option value="48000">48 kHz</option>
+                            <option value="88200">88.2 kHz</option>
+                            <option value="96000">96 kHz</option>
+                        </select>
+                    </div>
+                    
+                    <label class="retro-label">
+                        <input type="checkbox" id="samples-mode-check" class="retro-checkbox">
+                        <span class="retro-text">Show values in Samples</span>
+                    </label>
+
+                    <label class="retro-label">
+                        <input type="checkbox" id="predelay-mode-check" class="retro-checkbox">
+                        <span class="retro-text">Reverb Pre-Delay Mode</span>
+                    </label>
+
+                    <div style="margin-top: 10px; border-top: 1px solid var(--shadow); border-bottom: 1px solid var(--highlight); height: 2px;"></div>
+                    
+                    <div style="text-align: right; margin-top: auto;">
+                        <button id="btn-back" class="win-btn" style="width: 80px;">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === HELP VIEW === -->
+        <div id="view-help" class="view-stack" style="display: none;">
+            <div class="groupbox" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="groupbox-title">About</div>
+                
+                <div class="win-bevel-sunken" style="flex: 1; margin: 4px; padding: 8px; background-color: #fff; overflow-y: auto;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">Delay Calculator v1.0</div>
+                    <div style="margin-bottom: 8px;">
+                        Simple tool for calculating delay times and reverb pre-delays.
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Shortcuts:</strong><br>
+                        Space: Tap Tempo<br>
+                        Arrows: Fine tune BPM<br>
+                        Alt+F: File Menu<br>
+                        Alt+O: Options Menu<br>
+                        Alt+H: Help Menu
+                    </div>
+                    <div>
+                        <strong>Features:</strong><br>
+                        - Milliseconds & Samples<br>
+                        - Delay & Pre-Delay Modes<br>
+                        - Click value to copy
+                    </div>
+                </div>
+
+                <div style="text-align: right; margin-top: 6px;">
+                    <button id="btn-close-help" class="win-btn" style="width: 80px;">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+            <div class="status-panel status-main" id="status-msg">Initializing...</div>
+            <div class="status-panel status-right" id="status-bpm">BPM: 120.0</div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- ERROR HANDLING ---
+        window.onerror = function(msg, source, line, col, error) {
+            const statusMsg = document.getElementById('status-msg');
+            if(statusMsg) statusMsg.textContent = "Error: " + msg;
+            return false;
+        };
+
+        // --- GLOBALS ---
+        let ipcRenderer = null;
+        let fs = null;
+        let path = null;
+        try {
+            const electron = require('electron');
+            ipcRenderer = electron.ipcRenderer;
+            fs = require('fs');
+            path = require('path');
+        } catch (e) {
+            console.warn('Electron/Node fallback.', e);
+        }
+
+        const MIN_BPM = 40;
+        const MAX_BPM = 250;
+        const START_BPM = 120;
+        
+        // --- DOM ELEMENTS ---
+        const bpmInput = document.getElementById('bpm-input');
+        const btnUp = document.getElementById('btn-up');
+        const btnDown = document.getElementById('btn-down');
+        const btnTap = document.getElementById('btn-tap');
+        const btnReset = document.getElementById('btn-reset');
+        const tempoGroup = document.getElementById('tempo-group');
+        // btnConfig removed
+        
+        // Window Controls
+        const btnMinimize = document.getElementById('btn-minimize');
+        const btnClose = document.getElementById('btn-close');
+
+        // Menu Elements
+        const menuFile = document.getElementById('menu-file');
+        const menuOptions = document.getElementById('menu-options');
+        const menuHelp = document.getElementById('menu-help');
+        const dropdownFile = document.getElementById('dropdown-file');
+        const dropdownOptions = document.getElementById('dropdown-options');
+        const dropdownHelp = document.getElementById('dropdown-help');
+        const menuExit = document.getElementById('menu-exit');
+        const menuSettings = document.getElementById('menu-settings');
+        const menuWhatIs = document.getElementById('menu-what-is');
+
+        // Views
+        const viewMain = document.getElementById('view-main');
+        const viewSettings = document.getElementById('view-settings');
+        const viewHelp = document.getElementById('view-help');
+        
+        // Settings Elements
+        const btnBack = document.getElementById('btn-back');
+        const btnCloseHelp = document.getElementById('btn-close-help');
+        const sampleRateSelect = document.getElementById('sample-rate-select');
+        const samplesModeCheck = document.getElementById('samples-mode-check');
+        const predelayModeCheck = document.getElementById('predelay-mode-check');
+
+        const delaysContainer = document.getElementById('delays-container');
+        const delaysTitle = document.getElementById('delays-title');
+        const statusMsg = document.getElementById('status-msg');
+        const statusBpm = document.getElementById('status-bpm');
+
+        // --- STATE ---
+        let currentBpm = START_BPM;
+        let tapTimes = [];
+        let statusTimeout = null;
+        let currentSampleRate = 44100;
+        let isSamplesMode = false;
+        let isPreDelayMode = false;
+
+        // --- DATA ---
+        const notesDelay = [
+            { symbol: '1/1', multiplier: 4.0 },
+            { symbol: '1/2', multiplier: 2.0 },
+            { symbol: '1/4', multiplier: 1.0 },
+            { symbol: '1/4.', multiplier: 1.5 },
+            { symbol: '1/4t', multiplier: 2/3 },
+            { symbol: '1/8', multiplier: 0.5 },
+            { symbol: '1/8.', multiplier: 0.75 },
+            { symbol: '1/8t', multiplier: 1/3 },
+            { symbol: '1/16', multiplier: 0.25 },
+        ];
+
+        const notesPreDelay = [
+            { symbol: '1/16', multiplier: 0.25 },
+            { symbol: '1/16.', multiplier: 0.25 * 1.5 },
+            { symbol: '1/16t', multiplier: 0.25 * (2/3) },
+            { symbol: '1/32', multiplier: 0.125 },
+            { symbol: '1/32.', multiplier: 0.125 * 1.5 },
+            { symbol: '1/32t', multiplier: 0.125 * (2/3) },
+            { symbol: '1/64', multiplier: 0.0625 },
+            { symbol: '1/64.', multiplier: 0.0625 * 1.5 },
+            { symbol: '1/64t', multiplier: 0.0625 * (2/3) },
+        ];
+
+        let currentNotes = notesDelay;
+
+        // --- FILE MENU ELEMENTS ---
+        const menuExportText = document.getElementById('menu-export-text');
+
+        // --- MENU LOGIC ---
+        function closeAllMenus() {
+            dropdownFile.style.display = 'none';
+            dropdownOptions.style.display = 'none';
+            dropdownHelp.style.display = 'none';
+            menuFile.classList.remove('active');
+            menuOptions.classList.remove('active');
+            menuHelp.classList.remove('active');
+        }
+
+        function toggleMenu(menuItem, dropdown) {
+            const isVisible = dropdown.style.display === 'flex';
+            closeAllMenus();
+            if (!isVisible) {
+                dropdown.style.display = 'flex';
+                menuItem.classList.add('active');
+            }
+        }
+
+        menuFile.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu(menuFile, dropdownFile);
+        });
+
+        menuOptions.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu(menuOptions, dropdownOptions);
+        });
+
+        menuHelp.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu(menuHelp, dropdownHelp);
+        });
+
+        document.addEventListener('click', () => {
+            closeAllMenus();
+        });
+
+        // Menu Actions
+        // Handle Minimize/Close via IPC
+        if (btnMinimize) {
+            btnMinimize.addEventListener('click', () => {
+                if (ipcRenderer) ipcRenderer.send('app-minimize');
+            });
+        }
+
+        if (btnClose) {
+            btnClose.addEventListener('click', () => {
+                if (ipcRenderer) ipcRenderer.send('app-close');
+                else window.close();
+            });
+        }
+
+        menuExit.addEventListener('click', () => {
+            if (ipcRenderer) ipcRenderer.send('app-close');
+            else window.close(); 
+        });
+
+        menuSettings.addEventListener('click', () => {
+            showView('settings');
+        });
+
+        // --- FILE MENU ACTIONS ---
+        if (menuExportText) {
+            menuExportText.addEventListener('click', async () => {
+                closeAllMenus();
+                if (!ipcRenderer || !fs) {
+                    showStatus('Error: Node integration missing.');
+                    return;
+                }
+                try {
+                    const filePath = await ipcRenderer.invoke('dialog-save-text');
+                    if (!filePath) return;
+
+                    const lines = [];
+                    lines.push(`Delay Calculator Export`);
+                    lines.push(`Date: ${new Date().toLocaleString()}`);
+                    lines.push(`BPM: ${currentBpm.toFixed(1)}`);
+                    if (isSamplesMode) lines.push(`Sample Rate: ${currentSampleRate} Hz`);
+                    lines.push(`Mode: ${isPreDelayMode ? 'Reverb Pre-Delay' : 'Standard Delay'}`);
+                    lines.push('----------------------------------------');
+                    lines.push(`Note\t\tValue (${isSamplesMode ? 'Samples' : 'ms'})`);
+                    lines.push('----------------------------------------');
+
+                    const quarterNoteMs = 60000 / currentBpm;
+                    currentNotes.forEach(note => {
+                        const ms = quarterNoteMs * note.multiplier;
+                        let val;
+                        if (isSamplesMode) {
+                            val = ((ms / 1000) * currentSampleRate).toFixed(0);
+                        } else {
+                            val = ms.toFixed(1);
+                        }
+                        // Pad symbol for alignment
+                        const sym = note.symbol.padEnd(8, ' ');
+                        lines.push(`${sym}\t${val}`);
+                    });
+                    lines.push('----------------------------------------');
+
+                    fs.writeFileSync(filePath, lines.join('\r\n'), 'utf-8'); // CRLF for Windows text files
+                    showStatus(`Exported: ${path.basename(filePath)}`);
+                } catch (e) {
+                    showStatus(`Error exporting: ${e.message}`);
+                }
+            });
+        }
+
+        menuWhatIs.addEventListener('click', () => {
+            showView('help');
+        });
+
+        // --- VIEW SWITCHING ---
+        function showView(viewName) {
+            viewMain.style.display = 'none';
+            viewSettings.style.display = 'none';
+            if(viewHelp) viewHelp.style.display = 'none';
+
+            if (viewName === 'main') {
+                viewMain.style.display = 'flex';
+            } else if (viewName === 'settings') {
+                viewSettings.style.display = 'flex';
+            } else if (viewName === 'help') {
+                if(viewHelp) viewHelp.style.display = 'flex';
+            }
+        }
+
+        // --- CORE FUNCTIONS ---
+
+        function initTable() {
+            if (!delaysContainer) return;
+            delaysContainer.innerHTML = '';
+            tableRowCache = []; // Clear cache
+            
+            // Create two columns
+            const leftCol = document.createElement('div');
+            leftCol.className = 'delay-col';
+            const rightCol = document.createElement('div');
+            rightCol.className = 'delay-col';
+            
+            const splitIndex = Math.ceil(currentNotes.length / 2);
+            
+            currentNotes.forEach((note, index) => {
+                const row = document.createElement('div');
+                row.className = 'delay-row';
+                
+                // Static Label (1/4 etc)
+                const label = document.createElement('div');
+                label.className = 'delay-label';
+                label.textContent = note.symbol;
+                
+                // Dynamic Value Box (Readout)
+                const valueBox = document.createElement('div');
+                valueBox.className = 'delay-readout';
+                // valueBox.id = `val-${index}`; // ID no longer needed for lookup
+                valueBox.textContent = '0.0';
+                
+                // Fixed Unit Label
+                const unitLabel = document.createElement('div');
+                unitLabel.className = 'delay-unit';
+                unitLabel.textContent = isSamplesMode ? 'spl' : 'ms';
+                
+                // Cache elements for fast updates
+                tableRowCache.push({
+                    valueBox: valueBox,
+                    unitLabel: unitLabel,
+                    multiplier: note.multiplier
+                });
+                
+                // Click to Copy
+                valueBox.addEventListener('click', () => {
+                    const text = valueBox.textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        showStatus(`Copied: ${text}`);
+                        // Visual feedback
+                        valueBox.style.backgroundColor = 'var(--selection-bg)';
+                        valueBox.style.color = 'var(--selection-text)';
+                        setTimeout(() => {
+                            valueBox.style.backgroundColor = '';
+                            valueBox.style.color = '';
+                        }, 200);
+                    }).catch(err => {
+                        showStatus('Copy failed.');
+                    });
+                });
+
+                row.appendChild(label);
+                row.appendChild(valueBox);
+                row.appendChild(unitLabel);
+                
+                if (index < splitIndex) {
+                    leftCol.appendChild(row);
+                } else {
+                    rightCol.appendChild(row);
+                }
+            });
+            
+            delaysContainer.appendChild(leftCol);
+            delaysContainer.appendChild(rightCol);
+        }
+
+        function updateTableValues() {
+            // Optimization: Calculate base value once
+            const quarterNoteMs = 60000 / currentBpm;
+            
+            // Optimization: Use cached elements, no DOM queries
+            const len = tableRowCache.length;
+            for (let i = 0; i < len; i++) {
+                const row = tableRowCache[i];
+                const ms = quarterNoteMs * row.multiplier;
+                
+                let displayVal;
+                // Unit label is already set in initTable, only update if mode changes (which triggers initTable)
+                // so we don't need to update unitLabel text here every frame.
+                
+                if (isSamplesMode) {
+                    // Samples = (ms / 1000) * sampleRate
+                    const samples = (ms / 1000) * currentSampleRate;
+                    displayVal = samples.toFixed(0);
+                } else {
+                    displayVal = ms.toFixed(1);
+                }
+                
+                // Optimization: direct property access
+                row.valueBox.textContent = displayVal;
+            }
+        }
+        
+        function updateTitle() {
+             if (delaysTitle) {
+                 const baseTitle = isPreDelayMode ? 'Pre-Delay' : 'Delays';
+                 const unit = isSamplesMode ? '(spl)' : '(ms)';
+                 delaysTitle.textContent = `${baseTitle} ${unit}`;
+             }
+             const appTitle = document.getElementById('app-title-container');
+             const titleBar = document.querySelector('.title-bar');
+             
+             if (appTitle) {
+                 appTitle.textContent = isPreDelayMode ? 'Reverb Calculator' : 'Delay Calculator';
+             }
+             
+             if (titleBar) {
+                 if (isPreDelayMode) {
+                     titleBar.classList.add('reverb-mode');
+                 } else {
+                     titleBar.classList.remove('reverb-mode');
+                 }
+             }
+        }
+
+        function setBpm(val, source = 'internal') {
+            let newBpm = parseFloat(val);
+            if (isNaN(newBpm)) newBpm = currentBpm;
+            
+            if (newBpm < MIN_BPM) newBpm = MIN_BPM;
+            if (newBpm > MAX_BPM) newBpm = MAX_BPM;
+            
+            // Optimization: Skip if value hasn't changed enough to be visible
+            if (Math.abs(newBpm - currentBpm) < 0.001) return;
+
+            currentBpm = newBpm;
+            updateUI(source);
+        }
+
+        function updateUI(source) {
+            try {
+                const displayVal = currentBpm.toFixed(1);
+                
+                if (document.activeElement !== bpmInput) {
+                    bpmInput.value = displayVal;
+                } else if (source === 'input_blur' || source === 'enter') {
+                    bpmInput.value = displayVal;
+                }
+
+                statusBpm.textContent = `BPM: ${displayVal}`;
+                updateTableValues();
+            } catch(e) {
+                if(statusMsg) statusMsg.textContent = "UI Error: " + e.message;
+            }
+        }
+
+        function showStatus(msg) {
+            statusMsg.textContent = msg;
+            if (statusTimeout) clearTimeout(statusTimeout);
+            statusTimeout = setTimeout(() => {
+                statusMsg.textContent = "Ready.";
+            }, 3000);
+        }
+
+        // --- EVENT HANDLERS ---
+        
+        // View Switching
+        btnBack.addEventListener('click', () => {
+            showView('main');
+        });
+
+        if(btnCloseHelp) {
+            btnCloseHelp.addEventListener('click', () => {
+                showView('main');
+            });
+        }
+
+        // Settings Handlers
+        if (sampleRateSelect) {
+            sampleRateSelect.addEventListener('change', () => {
+                currentSampleRate = parseInt(sampleRateSelect.value);
+                updateTableValues();
+            });
+        }
+        
+        if (samplesModeCheck) {
+            samplesModeCheck.addEventListener('change', () => {
+                isSamplesMode = samplesModeCheck.checked;
+                updateTitle();
+                // If switching units, we might need to re-init labels or just update values
+                // But initTable sets the unit text (ms/spl) statically, so we need to re-init.
+                initTable(); 
+                updateTableValues();
+            });
+        }
+        
+        if (predelayModeCheck) {
+            predelayModeCheck.addEventListener('change', () => {
+                isPreDelayMode = predelayModeCheck.checked;
+                currentNotes = isPreDelayMode ? notesPreDelay : notesDelay;
+                updateTitle();
+                initTable();
+                updateTableValues();
+            });
+        }
+
+        bpmInput.addEventListener('change', () => setBpm(bpmInput.value, 'input_blur'));
+        bpmInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                setBpm(bpmInput.value, 'enter');
+                bpmInput.blur();
+            }
+        });
+
+        btnUp.addEventListener('click', () => setBpm(currentBpm + 1));
+        btnDown.addEventListener('click', () => setBpm(currentBpm - 1));
+
+        btnReset.addEventListener('click', () => {
+            setBpm(120);
+            showStatus('Reset to 120 BPM');
+        });
+
+        function handleTap() {
+            const now = Date.now();
+            if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) {
+                tapTimes = [];
+            }
+            tapTimes.push(now);
+            if (tapTimes.length > 5) tapTimes.shift();
+
+            if (tapTimes.length > 1) {
+                let intervals = [];
+                for (let i = 1; i < tapTimes.length; i++) {
+                    intervals.push(tapTimes[i] - tapTimes[i-1]);
+                }
+                const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                const newBpm = 60000 / avgInterval;
+                setBpm(newBpm);
+                showStatus(`Tap! (Avg: ${newBpm.toFixed(1)})`);
+            } else {
+                showStatus('Tap again...');
+            }
+            btnTap.classList.add('active');
+            setTimeout(() => btnTap.classList.remove('active'), 100);
+        }
+        btnTap.addEventListener('click', handleTap);
+
+        let scrollAccumulator = 0;
+        let rafScroll = false;
+        tempoGroup.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            let deltaY = e.deltaY;
+            if (e.deltaMode === 1) deltaY *= 16;
+            if (e.deltaMode === 2) deltaY *= window.innerHeight;
+            const isTouchpad = (e.deltaMode === 0 && Math.abs(deltaY) < 50);
+            const sensitivity = isTouchpad ? 0.5 : 0.05;
+            scrollAccumulator += (deltaY * sensitivity);
+            if (!rafScroll) {
+                rafScroll = true;
+                requestAnimationFrame(() => {
+                    if (Math.abs(scrollAccumulator) >= 0.1) {
+                        setBpm(currentBpm - scrollAccumulator);
+                        scrollAccumulator = 0;
+                    }
+                    rafScroll = false;
+                });
+            }
+        }, { passive: false });
+
+        let keyAccumulator = 0;
+        let rafKey = false;
+        window.addEventListener('keydown', (e) => {
+            // Shortcuts
+            if (e.altKey) {
+                if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    toggleMenu(menuFile, dropdownFile);
+                } else if (e.key === 'o' || e.key === 'O') {
+                    e.preventDefault();
+                    toggleMenu(menuOptions, dropdownOptions);
+                } else if (e.key === 'h' || e.key === 'H') {
+                    e.preventDefault();
+                    toggleMenu(menuHelp, dropdownHelp);
+                }
+                return;
+            }
+
+            if (document.activeElement === bpmInput) return;
+            let delta = 0;
+            if (e.key === 'ArrowUp') delta = 1;
+            else if (e.key === 'ArrowDown') delta = -1;
+            else if (e.key === 'ArrowRight') delta = 0.1;
+            else if (e.key === 'ArrowLeft') delta = -0.1;
+            else if (e.key === ' ') {
+                e.preventDefault();
+                handleTap();
+                return;
+            } else {
+                return;
+            }
+            e.preventDefault();
+            keyAccumulator += delta;
+            if (!rafKey) {
+                rafKey = true;
+                requestAnimationFrame(() => {
+                    if (Math.abs(keyAccumulator) >= 0.1) {
+                        setBpm(currentBpm + keyAccumulator);
+                        keyAccumulator = 0;
+                    }
+                    rafKey = false;
+                });
+            }
+        });
+
+        // if (ipcRenderer) {
+        //    ipcRenderer.on('app-focus-change', (e, isFocused) => {
+        //        document.body.style.opacity = isFocused ? '1' : '0.8';
+        //    });
+        // }
+
+        // --- INIT ---
+        initTable();
+        updateUI('init');
+
+    </script>
+</body>
+</html>

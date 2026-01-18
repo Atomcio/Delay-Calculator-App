@@ -1,0 +1,8 @@
+node_modules/
+dist/
+FINAL_BUILD*/
+FINAL_BUILD_V9_OPTIMIZED/
+*.log
+Thumbs.db
+desktop.ini
+

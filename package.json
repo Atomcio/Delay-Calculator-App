@@ -1,0 +1,17 @@
+{
+  "name": "delay-calculator",
+  "version": "1.0.0",
+  "description": "BPM to Delay Calculator",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . DelayCalculator --platform=win32 --arch=x64 --out=dist --overwrite --ignore=\"(^/FINAL_BUILD|^/dist|^/.git|^/.vscode|^/stara_WERSJA_BPM|^/DOCUMENTATION.md|^/README.md)\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-packager": "^17.1.2"
+  }
+}
