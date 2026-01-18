@@ -2,7 +2,7 @@ node_modules/
 dist/
 FINAL_BUILD*/
 FINAL_BUILD_V9_OPTIMIZED/
+stara_WERSJA_BPM/
 *.log
 Thumbs.db
 desktop.ini
-
