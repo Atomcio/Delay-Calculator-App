@@ -1,6 +1,7 @@
 node_modules/
 dist/
 FINAL_BUILD*/
+!DelayCalculator_v9_Optimized_Light.zip
 FINAL_BUILD_V9_OPTIMIZED/
 stara_WERSJA_BPM/
 *.log
