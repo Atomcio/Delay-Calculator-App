@@ -6,8 +6,6 @@ A high-performance, retro-styled tool for Audio Engineers and Music Producers. C
 
 > **Note:** Click the button above to launch the application directly in your browser.
 
-![Screenshot](screenshot.png)
-
 ---
 
 ## 🚀 Key Features
