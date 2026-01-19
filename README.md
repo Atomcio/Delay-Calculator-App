@@ -2,10 +2,11 @@
 
 A high-performance, retro-styled tool for Audio Engineers and Music Producers. Calculate precise delay and reverb times from BPM with extreme accuracy and zero resource overhead.
 
-![Screenshot](screenshot.png)
+[![Start App](https://img.shields.io/badge/▶_START_APP-Click_Here_to_Launch-success?style=for-the-badge&logo=html5&logoColor=white)](https://atomcio.github.io/Delay-Calculator-App/)
 
-## 🌐 [Play in Browser](https://atomcio.github.io/Delay-Calculator-App/)
-**[Click here to use the app directly in your browser!](https://atomcio.github.io/Delay-Calculator-App/)**
+> **Note:** Click the button above to launch the application directly in your browser.
+
+![Screenshot](screenshot.png)
 
 ---
 
